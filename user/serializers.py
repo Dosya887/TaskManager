@@ -89,3 +89,29 @@ class LogoutSerializer(serializers.Serializer):
             token.blacklist()
         except TokenError:
             raise serializers.ValidationError({'token': 'Не валидный токен'})
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(write_only=True,
+                                         validators=[validate_password]
+    )
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validation_old_password(self, value):
+        user = self.context['request'].user
+
+        if not user.check_password(value):
+            raise serializers.ValidationError('Неверно указан пароль')
+        return value
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError('Новый пароль не совпадает')
+        return attrs
+
+    def save(self):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
