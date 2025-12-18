@@ -50,6 +50,29 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['email', 'full_name', 'password1', 'password2']
 
 
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            user = authenticate(request=self.context.get('request'),
+                                email=email, password=password
+            )
+            if not user:
+                raise serializers.ValidationError('Пользователь не найден')
+            if not user.is_active:
+                raise serializers.ValidationError('Подтвердите почту для входа')
+            attrs['user'] = user
+            return attrs
+
+        else:
+            raise serializers.ValidationError('Почта и пароль обязательны')
+
+
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
     otp_code = serializers.CharField(max_length=6)
@@ -88,7 +111,7 @@ class LogoutSerializer(serializers.Serializer):
             token = RefreshToken(self.token)
             token.blacklist()
         except TokenError:
-            raise serializers.ValidationError({'token': 'Не валидный токен'})
+            raise serializers.ValidationError('Не валидный токен')
 
 
 class ChangePasswordSerializer(serializers.Serializer):
