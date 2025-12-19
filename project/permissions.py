@@ -19,7 +19,7 @@ class IsProjectManager(BasePermission):
             project=obj,
             user=request.user,
             role__in=(ProjectRole.MANAGER, ProjectRole.OWNER),
-        )
+        ).exists()
 
     def get_queryset(self):
         user = self.request.user

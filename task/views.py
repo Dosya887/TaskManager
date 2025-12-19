@@ -8,8 +8,14 @@ from user.choices import Role
 
 
 class TaskViewSet(ModelViewSet):
-    queryset = Task.objects.all()
     permission_classes = [IsAuthenticated, IsTaskExecutor | IsTaskOwner]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.role == Role.PROJECTMANAGER:
+            return Task.objects.filter(created_by=self.request.user)
+        return Task.objects.filter(assigned_to=user)
 
     def get_serializer_class(self):
         user = self.request.user
@@ -17,3 +23,6 @@ class TaskViewSet(ModelViewSet):
         if user.role == Role.PROJECTMANAGER:
             return TaskOwnerSerializer
         return TaskExecutorSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)

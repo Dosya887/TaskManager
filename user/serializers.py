@@ -42,7 +42,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password1'],
             is_active=False
         )
-        user.save()
         return user
 
     class Meta:

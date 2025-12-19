@@ -8,7 +8,7 @@ class IsTaskOwner(BasePermission):
     message = 'Это не ваш проект'
 
     def has_object_permission(self, request, view, obj):
-        return request.user.role == Role.PROJECTMANAGER and obj.owner == request.user
+        return request.user.role == Role.PROJECTMANAGER and obj.created_by == request.user
 
 
 class IsTaskExecutor(BasePermission):
