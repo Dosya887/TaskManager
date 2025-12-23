@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from user.models import User
+from user.models import User, OTP
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -89,13 +89,23 @@ class VerifyOTPSerializer(serializers.Serializer):
         if user.is_active:
             raise serializers.ValidationError({'email': 'Почта уже подтверждена'})
 
-        if user.otp_code != otp_code:
-            raise serializers.ValidationError({'otp_code': 'Введен не правильный код'})
+        try:
+            otp = OTP.objects.get(
+                user=user,
+                otp_code=otp_code,
+                is_active=True,
+                is_used=False
+            )
+        except OTP.DoesNotExist:
+            raise serializers.ValidationError({'otp_code': 'Неверный или не активный код'})
 
-        if timezone.now() > user.otp_created_at + timedelta(minutes=5):
+        if timezone.now() > otp.otp_created_at + timedelta(minutes=5):
+            otp.is_active = False
+            otp.save()
             raise serializers.ValidationError({'otp_code': 'Код ОТП истек'})
 
         attrs['user'] = user
+        attrs['otp'] = otp
         return attrs
 
 
@@ -154,15 +164,22 @@ class ConfirmOTPForChangePasswordSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError('Неверный код или email')
 
-        if not user.otp_code or user.otp_code != attrs['otp_code']:
-            raise serializers.ValidationError('Не верно указан код')
+        try:
+            otp = OTP.objects.get(
+                user=user,
+                otp_code=attrs['otp_code'],
+                is_active=True,
+                is_used=False
+            )
+        except OTP.DoesNotExist:
+            raise serializers.ValidationError('Не правильный или не активный код')
 
-        if timezone.now() > user.otp_created_at + timedelta(minutes=5):
+        if timezone.now() > otp.otp_created_at + timedelta(minutes=5):
             raise serializers.ValidationError('Срок действия ОТП кода истек')
 
-        user.otp_code = None
-        user.otp_created_at = None
-        user.save(update_fields=['otp_code', 'otp_created_at'])
+        otp.is_used = True
+        otp.is_active = False
+        otp.save()
 
         attrs['user'] = user
         return attrs

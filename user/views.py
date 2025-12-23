@@ -33,10 +33,14 @@ class VerifyOtpApiView(APIView):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
+        otp = serializer.validated_data['otp']
 
         user.is_active = True
-        user.otp_code = None
         user.save()
+
+        otp.is_active = False
+        otp.is_used = True
+        otp.save()
 
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
