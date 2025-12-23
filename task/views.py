@@ -14,8 +14,8 @@ class TaskViewSet(ModelViewSet):
         user = self.request.user
 
         if user.role == Role.PROJECTMANAGER:
-            return Task.objects.filter(created_by=self.request.user)
-        return Task.objects.filter(assigned_to=user)
+            return Task.objects.filter(created_by=user)
+        return Task.objects.filter(executor=user)
 
     def get_serializer_class(self):
         user = self.request.user
@@ -25,4 +25,6 @@ class TaskViewSet(ModelViewSet):
         return TaskExecutorSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        user = self.request.user
+
+        serializer.save(created_by=user)

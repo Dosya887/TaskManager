@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.password_validation import validate_password
+from django.core import signing
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -120,7 +121,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     )
     new_password_confirm = serializers.CharField(write_only=True)
 
-    def validation_old_password(self, value):
+    def validate_old_password(self, value):
         user = self.context['request'].user
 
         if not user.check_password(value):
@@ -137,3 +138,55 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ConfirmOTPForChangePasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp_code = serializers.CharField(max_length=6)
+
+    def validate(self, attrs):
+        try:
+            user = User.objects.get(email=attrs['email'])
+        except User.DoesNotExist:
+            raise serializers.ValidationError('Неверный код или email')
+
+        if not user.otp_code or user.otp_code != attrs['otp_code']:
+            raise serializers.ValidationError('Не верно указан код')
+
+        if timezone.now() > user.otp_created_at + timedelta(minutes=5):
+            raise serializers.ValidationError('Срок действия ОТП кода истек')
+
+        user.otp_code = None
+        user.otp_created_at = None
+        user.save(update_fields=['otp_code', 'otp_created_at'])
+
+        attrs['user'] = user
+        return attrs
+
+
+class ResetPasswordByEmailSerializer(serializers.Serializer):
+    reset_token = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError('Пароли не совпадают')
+
+        try:
+            data = signing.loads(
+                attrs['reset_token'],
+                salt='password-reset',
+                max_age=timedelta(minutes=5)
+            )
+        except signing.SignatureExpired:
+            raise serializers.ValidationError('reset_token истек')
+        except signing.BadSignature:
+            raise serializers.ValidationError('reset_token неверный')
+
+        attrs['user_id'] = data['user_id']
+        return attrs
