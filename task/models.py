@@ -6,6 +6,7 @@ from task.choices import TaskStatus
 
 
 class Task(models.Model):
+    """Модель задачи с проектом, исполнителем и статусом."""
     title = models.CharField(max_length=100, verbose_name="Название")
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Проект")
     description = models.TextField(verbose_name="Описание", blank=True)
