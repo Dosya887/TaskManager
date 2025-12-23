@@ -12,11 +12,19 @@ from user.services import send_otp_code
 from user.serializers import (RegisterSerializer,
                               VerifyOTPSerializer,
                               LogoutSerializer, LoginSerializer, PasswordResetRequestSerializer,
-                              ConfirmOTPForChangePasswordSerializer, ResetPasswordByEmailSerializer
+                              ConfirmOTPForChangePasswordSerializer, ResetPasswordByEmailSerializer,
+                              ChangePasswordSerializer
                               )
 
 
 class RegisterApiView(APIView):
+    """
+    Регистрация пользователя.
+    POST /api/user/register/
+    Body: {email, full_name, password1, password2}
+    Создает неактивного пользователя и отправляет OTP на email.
+    """
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -28,6 +36,13 @@ class RegisterApiView(APIView):
 
 
 class VerifyOtpApiView(APIView):
+    """
+    Подтверждение email через OTP.
+    POST /api/user/verify-otp/
+    Body: {email, otp_code}
+    Активирует аккаунт и возвращает JWT токены.
+    """
+    permission_classes = (AllowAny,)
 
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
@@ -54,6 +69,12 @@ class VerifyOtpApiView(APIView):
 
 
 class LoginApiView(APIView):
+    """
+    Вход в систему.
+    POST /api/user/login/
+    Body: {email, password}
+    Аутентифицирует пользователя и возвращает JWT токены.
+    """
     permission_classes = (AllowAny,)
 
     def post(self, request):
@@ -79,6 +100,13 @@ class LoginApiView(APIView):
 
 
 class LogoutApiView(APIView):
+    """
+    Выход из системы.
+    POST /api/user/logout/
+    Body: {refresh}
+    Header: Authorization: Bearer <access_token>
+    Добавляет refresh токен в черный список.
+    """
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
@@ -88,7 +116,30 @@ class LogoutApiView(APIView):
         return Response({'message': 'Вы вышли с аккаунта'}, status=status.HTTP_200_OK)
 
 
+class ChangePasswordApiView(APIView):
+    """
+    Изменение пароля (для авторизованного пользователя).
+    POST /api/user/change-password/
+    Body: {old_password, new_password, new_password_confirm}
+    Header: Authorization: Bearer <access_token>
+    Изменяет пароль после проверки старого.
+    """
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'message': 'Пароль успешно изменен'}, status=status.HTTP_200_OK)
+
+
 class PasswordResetRequestView(APIView):
+    """
+    Запрос на сброс пароля (забыл пароль) - Шаг 1.
+    POST /api/user/password-reset/request/
+    Body: {email}
+    Отправляет OTP код на email для сброса пароля.
+    """
     permission_classes = (AllowAny,)
 
     def post(self, request):
@@ -102,6 +153,12 @@ class PasswordResetRequestView(APIView):
 
 
 class ConfirmOTPForChangePasswordView(APIView):
+    """
+    Подтверждение OTP для сброса пароля - Шаг 2.
+    POST /api/user/password-reset/confirm-otp/
+    Body: {email, otp_code}
+    Проверяет OTP и возвращает reset_token для установки нового пароля.
+    """
     permission_classes = (AllowAny,)
 
     def post(self, request):
@@ -120,6 +177,12 @@ class ConfirmOTPForChangePasswordView(APIView):
 
 
 class ResetPasswordByEmailView(APIView):
+    """
+    Установка нового пароля - Шаг 3.
+    POST /api/user/password-reset/reset/
+    Body: {reset_token, new_password, new_password_confirm}
+    Устанавливает новый пароль используя reset_token.
+    """
     permission_classes = (AllowAny,)
 
     def post(self, request):

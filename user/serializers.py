@@ -11,6 +11,10 @@ from user.models import User, OTP
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """
+    Базовый сериализатор пользователя.
+    Используется для представления данных пользователя в ответах API.
+    """
 
     class Meta:
         model = User
@@ -25,6 +29,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор регистрации пользователя.
+    Валидирует email, пароли (совпадение и сложность).
+    Создает неактивного пользователя (is_active=False).
+    """
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
 
@@ -51,6 +60,11 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    """
+    Сериализатор входа в систему.
+    Проверяет email и пароль, валидирует активность аккаунта.
+    Возвращает объект пользователя в validated_data['user'].
+    """
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
@@ -74,6 +88,11 @@ class LoginSerializer(serializers.Serializer):
 
 
 class VerifyOTPSerializer(serializers.Serializer):
+    """
+    Сериализатор подтверждения email через OTP.
+    Проверяет существование пользователя, код OTP (активность, использование, срок 5 мин).
+    Возвращает user и otp объекты в validated_data.
+    """
     email = serializers.EmailField()
     otp_code = serializers.CharField(max_length=6)
 
@@ -110,6 +129,10 @@ class VerifyOTPSerializer(serializers.Serializer):
 
 
 class LogoutSerializer(serializers.Serializer):
+    """
+    Сериализатор выхода из системы.
+    Принимает refresh токен и добавляет его в черный список (blacklist).
+    """
     refresh = serializers.CharField()
 
     def validate(self, attrs):
@@ -125,6 +148,11 @@ class LogoutSerializer(serializers.Serializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
+    """
+    Сериализатор изменения пароля (для авторизованного пользователя).
+    Проверяет старый пароль, валидирует новый (совпадение и сложность).
+    Требует request в контексте для получения текущего пользователя.
+    """
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(write_only=True,
                                          validators=[validate_password]
@@ -151,10 +179,20 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
+    """
+    Сериализатор запроса на сброс пароля (Шаг 1).
+    Принимает только email. Валидация минимальна для безопасности
+    (не раскрывает существование email в системе).
+    """
     email = serializers.EmailField()
 
 
 class ConfirmOTPForChangePasswordSerializer(serializers.Serializer):
+    """
+    Сериализатор подтверждения OTP для сброса пароля (Шаг 2).
+    Проверяет OTP код, деактивирует и помечает как использованный.
+    Возвращает user объект в validated_data.
+    """
     email = serializers.EmailField()
     otp_code = serializers.CharField(max_length=6)
 
@@ -186,6 +224,11 @@ class ConfirmOTPForChangePasswordSerializer(serializers.Serializer):
 
 
 class ResetPasswordByEmailSerializer(serializers.Serializer):
+    """
+    Сериализатор установки нового пароля после сброса (Шаг 3).
+    Проверяет reset_token (подпись, срок 5 мин), валидирует новый пароль.
+    Возвращает user_id в validated_data.
+    """
     reset_token = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
     new_password_confirm = serializers.CharField(write_only=True)
