@@ -2,6 +2,7 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 class IsCommentWriteOrRead(BasePermission):
+    """Доступ к комментариям: чтение для участников задачи, запись только для автора."""
 
     def has_object_permission(self, request, view, obj):
         user = request.user

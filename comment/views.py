@@ -7,6 +7,7 @@ from comment.serializers import CommentSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Управление комментариями к задачам для участников (creator/executor)."""
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsCommentWriteOrRead]

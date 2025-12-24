@@ -4,6 +4,7 @@ from comment.models import Comment
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """Комментарий к задаче с read-only автором и задачей."""
 
     class Meta:
         model = Comment
