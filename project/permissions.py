@@ -6,6 +6,7 @@ from project_member.models import ProjectMember
 
 
 class IsProjectManager(BasePermission):
+    """Разрешение для менеджеров и владельцев проекта; SAFE_METHODS для всех участников."""
     message = 'Вы не являетесь менеджером проекта'
 
     def has_object_permission(self, request, view, obj):

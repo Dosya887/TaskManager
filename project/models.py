@@ -4,6 +4,7 @@ from user.models import User
 
 
 class Project(models.Model):
+    """Модель проекта с владельцем, описанием и датой создания."""
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE,

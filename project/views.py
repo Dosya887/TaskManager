@@ -7,6 +7,7 @@ from project.permissions import IsProjectManager
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
+    """Управление проектами с доступом для владельца и менеджера."""
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
 
