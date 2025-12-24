@@ -6,11 +6,10 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
    openapi.Info(
-      title="MarketBee API",
+      title="TaskManagerAPI",
       default_version='v1',
-      description="Документация для MarketBee API",
+      description="Документация для TaskManager API",
       terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="support@marketbee.com"),
       license=openapi.License(name="MIT License"),
    ),
    public=True,
