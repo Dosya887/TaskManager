@@ -4,6 +4,7 @@ from project_member.models import ProjectMember
 
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
+    """Сериализатор для управления участниками проекта и их ролями."""
 
     class Meta:
         model = ProjectMember

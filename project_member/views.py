@@ -7,6 +7,7 @@ from project_member.serializers import ProjectMemberSerializer
 
 
 class ProjectMemberViewSet(ModelViewSet):
+    """Управление участниками проекта (только owner/manager)."""
     serializer_class = ProjectMemberSerializer
     permission_classes = [IsAuthenticated, IsProjectOwnerOrManager]
 

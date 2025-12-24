@@ -6,6 +6,10 @@ from user.models import User
 
 
 class ProjectMember(models.Model):
+    """
+    Участник проекта.
+    Связывает пользователя с проектом и его ролью в проекте.
+    """
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='project_members')
     role = models.CharField(max_length=33, choices=ProjectRole.choices,
